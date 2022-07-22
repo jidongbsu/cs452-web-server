@@ -16,7 +16,7 @@ Read these chapters carefully in order to prepare yourself for this assignment:
 - [Locks](https://pages.cs.wisc.edu/~remzi/OSTEP/threads-locks.pdf)
 - [Condition Variables](https://pages.cs.wisc.edu/~remzi/OSTEP/threads-cv.pdf)
 
-In particular, the producer-consumer problem covered in the condition variable chapter is directly related to this assignment. The chapter actually used the multi-threaded web server as an example of the producer-consumer problem.
+In particular, the producer-consumer problem covered in the [Condition Variables](https://pages.cs.wisc.edu/~remzi/OSTEP/threads-cv.pdf) chapter is directly related to this assignment. The chapter actually used the multi-threaded web server as an example of the producer-consumer problem.
 
 ## Starter Code
 
