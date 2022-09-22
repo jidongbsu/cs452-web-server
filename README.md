@@ -130,11 +130,144 @@ For each pthread API, read its man page to find out how to use it.
 
 ## Testing and Expected Results
 
-To be added soon.
+1. When running the default single thread web server, we get the following results:
+
+
+server side, run this command to start the server and listen on port 8080.
+
+```console
+(base) [jidongxiao@onyxnode60 webserver]$ ./server -d ./ -p 8080
+```
+
+client side, run this command to send one http request:
+
+```console
+(base) [jidongxiao@onyxnode60 webserver]$ time ./client localhost 8080 /spin.cgi?5
+Header: HTTP/1.0 200 OK
+Header: Server: WebServer
+Header: Content-Length: 127
+Header: Content-Type: text/html
+<p>Welcome to the CGI program (5)</p>
+<p>My only purpose is to waste time on the server!</p>
+<p>I spun for 5.00 seconds</p>
+
+real	0m5.010s
+user	0m0.000s
+sys	0m0.004s
+```
+
+As can be seen that this one single request takes about 5 seconds to finish.
+
+now, run this command to send 4 http requests:
+
+```console
+(base) [jidongxiao@onyxnode60 webserver]$ time seq 4 | xargs -n 1 -P 4 -I{} ./client localhost 8080 /spin.cgi?5
+Header: HTTP/1.0 200 OK
+Header: Server: WebServer
+Header: Content-Length: 127
+Header: Content-Type: text/html
+<p>Welcome to the CGI program (5)</p>
+Header: HTTP/1.0 200 OK
+Header: Server: WebServer
+<p>My only purpose is to waste time on the server!</p>
+<p>I spun for 5.00 seconds</p>
+Header: Content-Length: 127
+Header: Content-Type: text/html
+<p>Welcome to the CGI program (5)</p>
+Header: HTTP/1.0 200 OK
+Header: Server: WebServer
+<p>My only purpose is to waste time on the server!</p>
+<p>I spun for 5.00 seconds</p>
+Header: Content-Length: 127
+Header: Content-Type: text/html
+<p>Welcome to the CGI program (5)</p>
+Header: HTTP/1.0 200 OK
+Header: Server: WebServer
+<p>My only purpose is to waste time on the server!</p>
+<p>I spun for 5.00 seconds</p>
+Header: Content-Length: 127
+Header: Content-Type: text/html
+<p>Welcome to the CGI program (5)</p>
+<p>My only purpose is to waste time on the server!</p>
+<p>I spun for 5.00 seconds</p>
+
+real	0m20.038s
+user	0m0.007s
+sys	0m0.021s
+```
+
+And we can see that to satisfy these 4 requests, in total it takes about 20 seconds.
+
+2. When running the multiple-threaded web server, we expect to get results similar to this:
+
+server side, run this command to start the web server with 4 threads and all listen on port 8080.
+
+```console
+(base) [jidongxiao@onyxnode60 webserver]$ ./concurrent_server -d ./ -p 8080 -t 4
+```
+
+client side, run this command to send one http request:
+
+```console
+(base) [jidongxiao@onyxnode60 webserver]$ time ./client localhost 8080 /spin.cgi?5
+Header: HTTP/1.0 200 OK
+Header: Server: WebServer
+Header: Content-Length: 127
+Header: Content-Type: text/html
+<p>Welcome to the CGI program (5)</p>
+<p>My only purpose is to waste time on the server!</p>
+<p>I spun for 5.00 seconds</p>
+
+real	0m5.013s
+user	0m0.001s
+sys	0m0.005s
+```
+
+it again takes about 5 seconds.
+
+now, run this command to send 4 http requests:
+
+```console
+(base) [jidongxiao@onyxnode60 webserver]$ time seq 4 | xargs -n 1 -P 4 -I{} ./client localhost 8080 /spin.cgi?5
+Header: HTTP/1.0 200 OK
+Header: Server: WebServer
+Header: HTTP/1.0 200 OK
+Header: Server: WebServer
+Header: HTTP/1.0 200 OK
+Header: Server: WebServer
+Header: HTTP/1.0 200 OK
+Header: Server: WebServer
+Header: Content-Length: 127
+Header: Content-Length: 127
+Header: Content-Length: 127
+Header: Content-Length: 127
+Header: Content-Type: text/html
+Header: Content-Type: text/html
+Header: Content-Type: text/html
+Header: Content-Type: text/html
+<p>Welcome to the CGI program (5)</p>
+<p>Welcome to the CGI program (5)</p>
+<p>Welcome to the CGI program (5)</p>
+<p>Welcome to the CGI program (5)</p>
+<p>My only purpose is to waste time on the server!</p>
+<p>My only purpose is to waste time on the server!</p>
+<p>My only purpose is to waste time on the server!</p>
+<p>My only purpose is to waste time on the server!</p>
+<p>I spun for 5.00 seconds</p>
+<p>I spun for 5.00 seconds</p>
+<p>I spun for 5.00 seconds</p>
+<p>I spun for 5.00 seconds</p>
+
+real	0m5.021s
+user	0m0.001s
+sys	0m0.025s
+```
+
+this time we can see the improvements - even for 4 requests, our web server can still serve all of them in about 5 seconds, as opposed to 20 seconds.
 
 ## Submission 
 
-23:59pm, March 29th, 2022. Late submissions will not be accepted/graded. 
+23:59pm, October 20th, 2022. Late submissions will not be accepted/graded. 
 
 ## Project Layout
 
