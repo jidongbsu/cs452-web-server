@@ -133,13 +133,13 @@ For each pthread API, read its man page to find out how to use it.
 1. When running the default single thread web server, we get the following results:
 
 
-server side, run this command to start the server and listen on port 8080.
+- server side, run this command to start the server and listen on port 8080.
 
 ```console
 (base) [jidongxiao@onyxnode60 webserver]$ ./server -d ./ -p 8080
 ```
 
-client side, run this command to send one http request:
+- client side, run this command to send one http request:
 
 ```console
 (base) [jidongxiao@onyxnode60 webserver]$ time ./client localhost 8080 /spin.cgi?5
@@ -200,13 +200,13 @@ And we can see that to satisfy these 4 requests, in total it takes about 20 seco
 
 2. When running the multiple-threaded web server, we expect to get results similar to this:
 
-server side, run this command to start the web server with 4 threads and all listen on port 8080.
+- server side, run this command to start the web server with 4 threads and all listen on port 8080.
 
 ```console
 (base) [jidongxiao@onyxnode60 webserver]$ ./concurrent_server -d ./ -p 8080 -t 4
 ```
 
-client side, run this command to send one http request:
+- client side, run this command to send one http request:
 
 ```console
 (base) [jidongxiao@onyxnode60 webserver]$ time ./client localhost 8080 /spin.cgi?5
