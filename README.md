@@ -85,7 +85,7 @@ struct list {
 };
 ```
 
-The internal of these two structures are not really important to you. But you need to be aware of the *size* field of the *struct list*, which gives you the current size of the list. Knowing the current size of the list tells you if the list is full or not, and if the list is empty or not. So how do you create the linked list, use the following function:
+The internal of these two structures are not really important to you. But you need to be aware of the *size* field of the *struct list*, which gives you the current size of the list. Knowing the current size of the list tells you if the list is full or not, and if the list is empty or not. So how do you create the linked list? Use the following function:
 
 ```c
 struct list* createList(int (*equals)(const void *, const void *),
