@@ -39,9 +39,9 @@ libmylib.a  libmylib.so
 
 As of now, *concurrent_server.c* and *server.c* are completely the same, and they now just work as a single-threaded web server. You will be modifying *concurrent_server.c*, so as to convert it from a single-threaded web server into a multi-threaded web server. You should not modify other files in the same folder.
 
-client.c implements a web client, which can send http requests to the web server.
+*client.c* implements a web client, which can send http requests to the web server.
 
-spin.c will be used to generate a cgi script, which will be the only file hosted on the web server.
+*spin.c* will be used to generate a cgi script, which will be the only file hosted on the web server. When the web client attempts to access this cgi script, the script does nothing but just occupy the server for 5 seconds. We use this behavior to simulate the server handle an http request which takes 5 seconds. Therefore, if two such requests are sent to the server, and if the server only has one single thread to handle requests, then we expect the server to spend about 10 seconds to handle these 2 requests; but if the server has 2 threads, then handling 2 requests may still just take 5 seconds. This shows the benefit of using multiple threads.
 
 ## Specification
 
