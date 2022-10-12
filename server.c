@@ -24,11 +24,6 @@
 
 char default_root[] = ".";
 
-//
-// Some of this code stolen from Bryant/O'Halloran
-// Hopefully this is not a problem ... :)
-//
-
 #define MAXBUF (8192)
 
 /* this is not the standard readline function. */
