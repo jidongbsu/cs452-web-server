@@ -52,7 +52,7 @@ void producer(int fd);
 void *consumer(void *ptr);
 ```
 
-You also need to modify the *main*() function, so that the *producer*() and *consumer*() will be called. Plus, you are required to extend *main*() so that users (who run the web server) can specify how many consumer threads they want to run. Users do not need to specify how many producer threads they want to run: in this assignment, we only need to support one single producer thread.
+You also need to modify the *main*() function, so that the *producer*() and *consumer*() will be called. Plus, you are required to extend *main*() so that users (who run the web server) can specify (from the command line with a -*t* flag) how many consumer threads they want to run. Users do not need to specify how many producer threads they want to run: in this assignment, we only need to support one single producer thread.
 
 To facilitate your implementation of the producer/consumer functions, a doubly linked list library is provided. As shown in the starter code, *./list/lib/libmylib.a* is the provided library. It is pre-compiled, meaning that you can use the library but you have no access to its source code. Coming with the library are two of its header files: List.h and Node.h, both are located in the list/include subfolder. In this assignment, you are asked to create a linked list using API functions provided by this library. When the web server is running, producers add nodes to this linked list, whereas consumers remove nodes from this linked list.
 
@@ -271,7 +271,7 @@ And we can see that to satisfy these 4 http requests, in total it takes the serv
 
 2. When running the multiple-threaded web server, we expect to get results similar to this:
 
-- server side, run this command to start the web server with 4 threads and all listen on port 8080.
+- server side, run this command to start the web server listening on port 8080, with 4 (consumer) threads.
 
 ```console
 (base) [jidongxiao@onyxnode60 webserver]$ ./concurrent_server -p 8080 -t 4
@@ -361,10 +361,10 @@ All files necessary for compilation and testing need to be submitted, this inclu
 All grading will be executed on onyx.boisestate.edu. Submissions that fail to compile on onyx will not be graded.
                                                                                      
 - [80 pts] Functional Requirements:
-  - [20 pts] testing program produces expected results: when testing with 2 consumers and 4 http requests, the testing result is approximately 10 seconds.
-  - [20 pts] testing program produces expected results: when testing with 4 consumers and 2 http requests, the testing result is approximately 5 seconds.
-  - [20 pts] testing program produces expected results: when testing with 4 consumers and 4 http requests, the testing result is approximately 5 seconds.
-  - [20 pts] testing program produces expected results: when testing with 4 consumers and 8 http requests, the testing result is approximately 10 seconds.
+  - [20 pts] testing program produces expected results: when testing with 2 consumer threads and 4 http requests, the testing result is approximately 10 seconds.
+  - [20 pts] testing program produces expected results: when testing with 4 consumer threads and 2 http requests, the testing result is approximately 5 seconds.
+  - [20 pts] testing program produces expected results: when testing with 4 consumer threads and 4 http requests, the testing result is approximately 5 seconds.
+  - [20 pts] testing program produces expected results: when testing with 4 consumer threads and 8 http requests, the testing result is approximately 10 seconds.
 - [10 pts] Compiling
   - Each compiler warning will result in a 3 point deduction.
   - You are not allowed to suppress warnings.
