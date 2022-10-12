@@ -17,6 +17,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <pthread.h>
+#include "Item.h"
+#include <Node.h>
+#include <List.h>
 
 char default_root[] = ".";
 
@@ -51,15 +55,14 @@ ssize_t readline(int fd, void *buf, size_t maxlen) {
 }
 
 /* request handle functions */
-
 void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg) {
     char buf[MAXBUF], body[MAXBUF];
     
-    // Create the body of error message first (have to know its length for header)
+    // create the body of error message first (have to know its length for header)
     snprintf(body, MAXBUF, ""
 	    "<!doctype html>\r\n"
 	    "<head>\r\n"
-	    "  <title>WebServer Error</title>\r\n"
+	    "  <title>Web Server Error</title>\r\n"
 	    "</head>\r\n"
 	    "<body>\r\n"
 	    "  <h2>%s: %s</h2>\r\n" 
@@ -67,7 +70,7 @@ void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *long
 	    "</body>\r\n"
 	    "</html>\r\n", errnum, shortmsg, longmsg, cause);
     
-    // Write out the header information for this response
+    // write out the header information for this response
     snprintf(buf, MAXBUF, "HTTP/1.0 %s %s\r\n", errnum, shortmsg);
     write(fd, buf, strlen(buf));
     
@@ -77,179 +80,73 @@ void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *long
     snprintf(buf, MAXBUF, "Content-Length: %lu\r\n\r\n", strlen(body));
     write(fd, buf, strlen(buf));
     
-    // Write out the body last
+    // write out the body last
     write(fd, body, strlen(body));
-}
-
-//
-// Reads and discards everything up to an empty text line
-//
-void request_read_headers(int fd) {
-    char buf[MAXBUF];
-    
-    readline(fd, buf, MAXBUF);
-    while (strcmp(buf, "\r\n")) {
-	readline(fd, buf, MAXBUF);
-    }
-    return;
-}
-
-//
-// Return 1 if static, 0 if dynamic content
-// Calculates filename (and cgiargs, for dynamic) from uri
-//
-int request_parse_uri(char *uri, char *filename, char *cgiargs) {
-    char *ptr;
-    
-    if (!strstr(uri, "cgi")) { 
-	// static
-	strcpy(cgiargs, "");
-	snprintf(filename, MAXBUF, ".%s", uri);
-	if (uri[strlen(uri)-1] == '/') {
-	    strcat(filename, "index.html");
-	}
-	return 1;
-    } else { 
-	// dynamic
-	ptr = index(uri, '?');
-	if (ptr) {
-	    strcpy(cgiargs, ptr+1);
-	    *ptr = '\0';
-	} else {
-	    strcpy(cgiargs, "");
-	}
-	snprintf(filename, MAXBUF, ".%s", uri);
-	return 0;
-    }
-}
-
-//
-// Fills in the filetype given the filename
-//
-void request_get_filetype(char *filename, char *filetype) {
-    if (strstr(filename, ".html")) 
-	strcpy(filetype, "text/html");
-    else if (strstr(filename, ".gif")) 
-	strcpy(filetype, "image/gif");
-    else if (strstr(filename, ".jpg")) 
-	strcpy(filetype, "image/jpeg");
-    else 
-	strcpy(filetype, "text/plain");
-}
-
-void request_serve_dynamic(int fd, char *filename, char *cgiargs) {
-    char buf[MAXBUF], *argv[] = { NULL };
-    
-    // The server does only a little bit of the header.  
-    // The CGI script has to finish writing out the header.
-    snprintf(buf, MAXBUF, ""
-	    "HTTP/1.0 200 OK\r\n"
-	    "Server: WebServer\r\n");
-    
-    write(fd, buf, strlen(buf));
-    
-    if (fork() == 0) {                        // child
-	setenv("QUERY_STRING", cgiargs, 1);   // args to cgi go here
-	dup2(fd, STDOUT_FILENO);              // make cgi writes go to socket (not screen)
-	extern char **environ;                       // defined by libc 
-	execve(filename, argv, environ);
-    } else {
-	wait(NULL);
-    }
-}
-
-void request_serve_static(int fd, char *filename, int filesize) {
-    int srcfd;
-    char *srcp, filetype[15], buf[MAXBUF];
-    
-    request_get_filetype(filename, filetype);
-    srcfd = open(filename, O_RDONLY, 0);
-    
-    // Rather than call read() to read the file into memory, 
-    // which would require that we allocate a buffer, we memory-map the file
-    srcp = mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
-    close(srcfd);
-    
-    // put together response
-    snprintf(buf, MAXBUF, ""
-	    "HTTP/1.0 200 OK\r\n"
-	    "Server: WebServer\r\n"
-	    "Content-Length: %d\r\n"
-	    "Content-Type: %s\r\n\r\n", 
-	    filesize, filetype);
-    
-    write(fd, buf, strlen(buf));
-    
-    //  Writes out to the client socket the memory-mapped file 
-    write(fd, srcp, filesize);
-    munmap(srcp, filesize);
 }
 
 // handle a request
 void request_handle(int fd) {
-    int is_static;
     struct stat sbuf;
     char buf[MAXBUF], method[MAXBUF], uri[MAXBUF], version[15];
-    char filename[MAXBUF], cgiargs[MAXBUF];
+	/* this is the only file we serve. */
+    char filename[MAXBUF] = "spin.cgi";
+    char *argv[] = { NULL };
     
-	/* FIXME: somehow this program won't work if we remove this below printf statement */
-	printf("request handle: ");
+    /* make sure we do have the spin.cgi file on the server side */
+	if (stat(filename, &sbuf) < 0) {
+		request_error(fd, filename, "404", "Not found", "server could not find this file");
+		return;
+    }
+    
     /* read the first line */
     readline(fd, buf, MAXBUF);
+
+	/* read information from buf, which basically contains whatever information the client sent to the server. */
     sscanf(buf, "%s %s %s", method, uri, version);
     printf("method:%s uri:%s version:%s\n", method, uri, version);
     
     /* we only support get requests */
     if (strcasecmp(method, "GET")) {
-	request_error(fd, method, "501", "Not Implemented", "server does not implement this method");
-	return;
+		request_error(fd, method, "501", "Not Implemented", "server does not implement this method");
+		return;
     }
-    request_read_headers(fd);
+
+	/* serve the file */
     
-    is_static = request_parse_uri(uri, filename, cgiargs);
-    if (stat(filename, &sbuf) < 0) {
-	request_error(fd, filename, "404", "Not found", "server could not find this file");
-	return;
-    }
+    /* set up the http header. */
+    snprintf(buf, MAXBUF, ""
+	    "HTTP/1.0 200 OK\r\n"
+	    "Server: Web Server\r\n");
     
-    if (is_static) {
-	/* the client is requesting a static page, let's check permission first */
-	if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode)) {
-	    request_error(fd, filename, "403", "Forbidden", "server could not read this file");
-	    return;
-	}
-	/* if permission allowed, serve the file */
-	request_serve_static(fd, filename, sbuf.st_size);
+	/* write the http header, which is stored in buf, to the file descriptor, thus the above message will be displayed to the client. */
+    write(fd, buf, strlen(buf));
+    
+    if (fork() == 0) {                        // child
+		/* make cgi writes go to socket (not screen), doing so makes sure the cgi output will be displayed to the client. */
+		dup2(fd, STDOUT_FILENO);              
+		/* let the child process run the cgi script */
+		execvp(filename, argv);
     } else {
-	/* the client is requesting a dynamic page, let's check permission first */
-	if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
-	    request_error(fd, filename, "403", "Forbidden", "server could not run this CGI program");
-	    return;
-	}
-	/* if permission allowed, serve the file */
-	request_serve_dynamic(fd, filename, cgiargs);
+		/* parent just waits for the child to finish */
+		wait(NULL);
     }
 }
 
-//
-// ./wserver [-d <basedir>] [-p <portnum>] 
-// 
 int main(int argc, char *argv[]) {
     int c;
     char *root_dir = default_root;
     int port = 10000;
     
-    while ((c = getopt(argc, argv, "d:p:")) != -1)
-	switch (c) {
-	case 'd':
-	    root_dir = optarg;
-	    break;
-	case 'p':
-	    port = atoi(optarg);
-	    break;
-	default:
-	    fprintf(stderr, "usage: wserver [-d basedir] [-p port]\n");
-	    exit(1);
+    while ((c = getopt(argc, argv, "p:")) != -1){
+		switch (c) {
+		/* the user specifies port number. the web server will then listen on this port. */
+		case 'p':
+	    	port = atoi(optarg);
+	    	break;
+		default:
+	    	fprintf(stderr, "usage: ./server [-p port]\n");
+	    	exit(1);
+		}
 	}
 
     // run out of this directory
@@ -275,12 +172,14 @@ int main(int argc, char *argv[]) {
 		int client_len = sizeof(client_addr);
 		newsockfd = accept(sockfd, (struct sockaddr *)&client_addr, (socklen_t *) &client_len);
 
-		/* read data from the connection */
+		/* read data from the connection. we have two file descriptors here,
+		 * we use sockfd to listen to the port, and we use newsockfd to actually transfer data. */
 		request_handle(newsockfd);
 
-		/* close the connection */
+		/* close this one connection */
 		close(newsockfd);
 	}
+	/* if we ever get here, then close the pipe and don't listen anymore. */
 	close(sockfd);
 
 	return 0;

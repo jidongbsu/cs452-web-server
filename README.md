@@ -25,7 +25,7 @@ The starter code looks like this:
 ```console
 (base) [jidongxiao@onyx cs452-web-server]$ ls -R
 .:
-client.c  concurrent_server.c  index.html  Item.c  Item.h  list  Makefile  README.md  server.c  spin.c
+client.c  concurrent_server.c  Item.c  Item.h  list  Makefile  README.md  server.c  spin.c
 
 ./list:
 include  lib  Makefile  README.md  SimpleTestList.c
@@ -37,7 +37,7 @@ List.h  Node.h
 libmylib.a  libmylib.so
 ```
 
-You will be modifying *concurrent_server.c*. You should not modify other files in the same folder.
+As of now, *concurrent_server.c* and *server.c* are completely the same. You will be modifying *concurrent_server.c*, so as to convert it from a single threaded web server into a multi-threaded web server. You should not modify other files in the same folder.
 
 ## Specification
 
@@ -50,13 +50,15 @@ void *consumer(void *ptr);
 
 You also need to modify the main() function.
 
-To facilitate your implementation of the producer/consumer functions, a doubly linked list library is provided. As shown in the starter code, *./list/lib/libmylib.a* is the provided library. It is pre-compiled, meaning that you can use the library but you have no access to its source code. Coming with the library are two of its header files: List.h and Node.h, both are located in the list/include subfolder.
+To facilitate your implementation of the producer/consumer functions, a doubly linked list library is provided. As shown in the starter code, *./list/lib/libmylib.a* is the provided library. It is pre-compiled, meaning that you can use the library but you have no access to its source code. Coming with the library are two of its header files: List.h and Node.h, both are located in the list/include subfolder. In this assignment, you are asked to create a linked list using API functions provided by this library. When the web server is running, producers add nodes to this linked list, whereas consumers remove nodes from this linked list.
 
 This library does not support multiple threads, thus when a program with multiple threads attempts to access this library - manipulating the doubly linked list, there will be race conditions and the results may not be deterministic, and that is why in this assignment we need to use locks so as to avoid race conditions.
 
+**Constraints**: your linked list should have no more than 5 nodes, in other words, the producer should stop producing (i.e., adding nodes to the linked list) if the number of nodes on the linked list is already 5.
+
 ## Data Structures Defined in the Doubly Linked List Library
 
-The original list library defines *struct node* in *list/include/Node.h*:
+The provided linked list library defines *struct node* in *list/include/Node.h*:
 
 ```c
 typedef struct node * NodePtr;
@@ -97,6 +99,48 @@ You do not really need to understand what these arguments are doing, but you can
 struct list *list;
 list=createList(compareToItem, toStringItem, freeItem); // yes, the name of the three arguments of this createList() must be exactly the same as what are used here, as they are actually three pre-defined functions, defined in *Item.c*.
 ```
+
+## What Exactly Does the Producer Produce?
+
+Everytime the client attempts to send an http request to the server, a special pipe will be established between the client and the server. The request will then be associated with this pipe and its data will be sent over this pipe. To differentiate multiple pipes, the server assign a file descriptor (which is just an integer) to each pipe. Therefore, we can also say each request is associated with a file descriptor.
+
+To describe what exactly is produced by the producer, a data structure called *struct item* is defined in the starter code (in Item.h).
+
+```c
+struct item {
+	int fd;
+	int producer;
+};
+```
+
+Each item has two fields. The *fd* field allows us to track this item is for which request - remember each request is associated with a file descriptor. If we have many producers, then we use the *producer* field to track this item is produced by which producer. In other words, the *producer* field here is like the producer id.
+
+Everytime the *producer*() is called, it produces an item, encapsulates this item in a node, and add the node into the linked list. The following lines show how you can do so:
+
+```c
+struct item *item;
+struct node *node;
+```
+
+```c
+item = createItem(fd, 1);
+```
+
+this above line produces an item, stores the file descriptor in the *fd* field of struct item, and stores the producer id in the *producer* field of struct item. In this assignment, you will only have one producer (but multiple consumers), thus the producer id is just 1.
+
+```c
+node = createNode(item);
+addAtRear(list, node);
+```
+this above line assumes the doubly linked list you created is named as **list**.
+
+In summary, you should have the above 5 lines in your producer() function. And if now you look at the protoypte of the producer() function:
+
+```c
+void producer(int fd);
+```
+
+you will see why *fd* is passed as an argument.
 
 ## APIs Provided by the Doubly Linked List Library
 
