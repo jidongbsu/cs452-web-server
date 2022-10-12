@@ -37,7 +37,11 @@ List.h  Node.h
 libmylib.a  libmylib.so
 ```
 
-As of now, *concurrent_server.c* and *server.c* are completely the same. You will be modifying *concurrent_server.c*, so as to convert it from a single threaded web server into a multi-threaded web server. You should not modify other files in the same folder.
+As of now, *concurrent_server.c* and *server.c* are completely the same, and they now just work as a single-threaded web server. You will be modifying *concurrent_server.c*, so as to convert it from a single-threaded web server into a multi-threaded web server. You should not modify other files in the same folder.
+
+client.c implements a web client, which can send http requests to the web server.
+
+spin.c will be used to generate a cgi script, which will be the only file hosted on the web server.
 
 ## Specification
 
@@ -104,7 +108,7 @@ After these two lines, you now have a doubly linked list pointed to by *list*. N
 
 ## What Exactly Does the Producer Produce?
 
-Everytime the client attempts to send an http request to the server, a special pipe will be established between the client and the server. The request will then be associated with this pipe and its data will be sent over this pipe. To differentiate multiple pipes, the server assign a file descriptor (which is just an integer) to each pipe. Therefore, we can also say each request is associated with a file descriptor.
+Everytime the client attempts to send an http request to the server, a special pipe will be established between the client and the server. The request will then be associated with this pipe and its data will be sent over this pipe. To differentiate multiple pipes, the server assign a file descriptor (which is just an integer) to each pipe. Therefore, we can also say each request is associated with a file descriptor. We can also say each request is associated with a pipe.
 
 To describe what exactly is produced by the producer, a data structure called *struct item* is defined in the starter code (in Item.h).
 
@@ -115,7 +119,7 @@ struct item {
 };
 ```
 
-Each item has two fields. The *fd* field allows us to track this item is corresponding to which http request - remember each request is associated with a file descriptor. If we have many producers, then we use the *producer* field to track this item is produced by which producer. In other words, the *producer* field here is like the producer id.
+Each item has two fields. The *fd* field allows us to track that this item is corresponding to which http request - remember each request is associated with a file descriptor. If we have many producers, then we use the *producer* field to track this item is produced by which producer. In other words, the *producer* field here is like the producer id.
 
 Everytime the *producer*() is called, it produces an item, encapsulates this item in a node, and add the node into the linked list. The following lines show how you can do so:
 
@@ -195,6 +199,8 @@ For each pthread API, read its man page to find out how to use it.
 
 ## Testing and Expected Results
 
+You can test your code using one onyx node only. Just open two terminals: one is used as the web server, and the other is used as the web client. Make sure you run the following commands while you are in the stater code directory.
+
 1. When running the default single thread web server, we get the following results:
 
 
@@ -204,15 +210,15 @@ For each pthread API, read its man page to find out how to use it.
 (base) [jidongxiao@onyxnode60 webserver]$ ./server -p 8080
 ```
 
-- client side, run this command to send one http request:
+- client side, run this command to send one http request to the server's port 8080:
 
 ```console
 (base) [jidongxiao@onyxnode60 webserver]$ time ./client localhost 8080 /spin.cgi?5
 Header: HTTP/1.0 200 OK
-Header: Server: WebServer
+Header: Server: Web Server
 Header: Content-Length: 127
 Header: Content-Type: text/html
-<p>Welcome to the CGI program (5)</p>
+<p>Welcome to the CGI program</p>
 <p>My only purpose is to waste time on the server!</p>
 <p>I spun for 5.00 seconds</p>
 
@@ -221,38 +227,38 @@ user	0m0.000s
 sys	0m0.004s
 ```
 
-As can be seen that this one single request takes about 5 seconds to finish.
+As can be seen that it takes the server about 5 seconds to handle this one single http request.
 
 now, run this command to send 4 http requests:
 
 ```console
 (base) [jidongxiao@onyxnode60 webserver]$ time seq 4 | xargs -n 1 -P 4 -I{} ./client localhost 8080 /spin.cgi?5
 Header: HTTP/1.0 200 OK
-Header: Server: WebServer
+Header: Server: Web Server
 Header: Content-Length: 127
 Header: Content-Type: text/html
-<p>Welcome to the CGI program (5)</p>
+<p>Welcome to the CGI program</p>
 Header: HTTP/1.0 200 OK
-Header: Server: WebServer
+Header: Server: Web Server
 <p>My only purpose is to waste time on the server!</p>
 <p>I spun for 5.00 seconds</p>
 Header: Content-Length: 127
 Header: Content-Type: text/html
-<p>Welcome to the CGI program (5)</p>
+<p>Welcome to the CGI program</p>
 Header: HTTP/1.0 200 OK
-Header: Server: WebServer
+Header: Server: Web Server
 <p>My only purpose is to waste time on the server!</p>
 <p>I spun for 5.00 seconds</p>
 Header: Content-Length: 127
 Header: Content-Type: text/html
-<p>Welcome to the CGI program (5)</p>
+<p>Welcome to the CGI program</p>
 Header: HTTP/1.0 200 OK
-Header: Server: WebServer
+Header: Server: Web Server
 <p>My only purpose is to waste time on the server!</p>
 <p>I spun for 5.00 seconds</p>
 Header: Content-Length: 127
 Header: Content-Type: text/html
-<p>Welcome to the CGI program (5)</p>
+<p>Welcome to the CGI program</p>
 <p>My only purpose is to waste time on the server!</p>
 <p>I spun for 5.00 seconds</p>
 
@@ -261,7 +267,7 @@ user	0m0.007s
 sys	0m0.021s
 ```
 
-And we can see that to satisfy these 4 requests, in total it takes about 20 seconds.
+And we can see that to satisfy these 4 http requests, in total it takes the server about 20 seconds.
 
 2. When running the multiple-threaded web server, we expect to get results similar to this:
 
@@ -276,10 +282,10 @@ And we can see that to satisfy these 4 requests, in total it takes about 20 seco
 ```console
 (base) [jidongxiao@onyxnode60 webserver]$ time ./client localhost 8080 /spin.cgi?5
 Header: HTTP/1.0 200 OK
-Header: Server: WebServer
+Header: Server: Web Server
 Header: Content-Length: 127
 Header: Content-Type: text/html
-<p>Welcome to the CGI program (5)</p>
+<p>Welcome to the CGI program</p>
 <p>My only purpose is to waste time on the server!</p>
 <p>I spun for 5.00 seconds</p>
 
@@ -295,13 +301,13 @@ now, run this command to send 4 http requests:
 ```console
 (base) [jidongxiao@onyxnode60 webserver]$ time seq 4 | xargs -n 1 -P 4 -I{} ./client localhost 8080 /spin.cgi?5
 Header: HTTP/1.0 200 OK
-Header: Server: WebServer
+Header: Server: Web Server
 Header: HTTP/1.0 200 OK
-Header: Server: WebServer
+Header: Server: Web Server
 Header: HTTP/1.0 200 OK
-Header: Server: WebServer
+Header: Server: Web Server
 Header: HTTP/1.0 200 OK
-Header: Server: WebServer
+Header: Server: Web Server
 Header: Content-Length: 127
 Header: Content-Length: 127
 Header: Content-Length: 127
@@ -310,10 +316,10 @@ Header: Content-Type: text/html
 Header: Content-Type: text/html
 Header: Content-Type: text/html
 Header: Content-Type: text/html
-<p>Welcome to the CGI program (5)</p>
-<p>Welcome to the CGI program (5)</p>
-<p>Welcome to the CGI program (5)</p>
-<p>Welcome to the CGI program (5)</p>
+<p>Welcome to the CGI program</p>
+<p>Welcome to the CGI program</p>
+<p>Welcome to the CGI program</p>
+<p>Welcome to the CGI program</p>
 <p>My only purpose is to waste time on the server!</p>
 <p>My only purpose is to waste time on the server!</p>
 <p>My only purpose is to waste time on the server!</p>
@@ -328,15 +334,15 @@ user	0m0.001s
 sys	0m0.025s
 ```
 
-this time we can see the improvements - even for 4 requests, our web server can still serve all of them in about 5 seconds, as opposed to 20 seconds.
+this time we can see the improvements - even for 4 http requests, our web server can still serve all of them in about 5 seconds, as opposed to 20 seconds.
 
-3. additional testing. if you want to test the client program with 2 requests, you should run:
+3. additional testing. if you want to test the client program with 2 http requests, you should run:
 
 ```console
 (base) [jidongxiao@onyxnode60 webserver]$ time seq 2 | xargs -n 1 -P 2 -I{} ./client localhost 8080 /spin.cgi?5
 ```
 
-if you want to test the client program with 8 requests, you should run:
+if you want to test the client program with 8 http requests, you should run:
 
 ```console
 (base) [jidongxiao@onyxnode60 webserver]$ time seq 8 | xargs -n 1 -P 8 -I{} ./client localhost 8080 /spin.cgi?5
@@ -355,10 +361,10 @@ All files necessary for compilation and testing need to be submitted, this inclu
 All grading will be executed on onyx.boisestate.edu. Submissions that fail to compile on onyx will not be graded.
                                                                                      
 - [80 pts] Functional Requirements:
-  - [20 pts] testing program produces expected results: when testing with 2 consumers and 4 client requests, the testing result is approximately 10 seconds.
-  - [20 pts] testing program produces expected results: when testing with 4 consumers and 2 client requests, the testing result is approximately 5 seconds.
-  - [20 pts] testing program produces expected results: when testing with 4 consumers and 4 client requests, the testing result is approximately 5 seconds.
-  - [20 pts] testing program produces expected results: when testing with 4 consumers and 8 client requests, the testing result is approximately 10 seconds.
+  - [20 pts] testing program produces expected results: when testing with 2 consumers and 4 http requests, the testing result is approximately 10 seconds.
+  - [20 pts] testing program produces expected results: when testing with 4 consumers and 2 http requests, the testing result is approximately 5 seconds.
+  - [20 pts] testing program produces expected results: when testing with 4 consumers and 4 http requests, the testing result is approximately 5 seconds.
+  - [20 pts] testing program produces expected results: when testing with 4 consumers and 8 http requests, the testing result is approximately 10 seconds.
 - [10 pts] Compiling
   - Each compiler warning will result in a 3 point deduction.
   - You are not allowed to suppress warnings.
