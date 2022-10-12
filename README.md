@@ -48,7 +48,7 @@ void producer(int fd);
 void *consumer(void *ptr);
 ```
 
-You also need to modify the main() function.
+You also need to modify the *main*() function.
 
 To facilitate your implementation of the producer/consumer functions, a doubly linked list library is provided. As shown in the starter code, *./list/lib/libmylib.a* is the provided library. It is pre-compiled, meaning that you can use the library but you have no access to its source code. Coming with the library are two of its header files: List.h and Node.h, both are located in the list/include subfolder. In this assignment, you are asked to create a linked list using API functions provided by this library. When the web server is running, producers add nodes to this linked list, whereas consumers remove nodes from this linked list.
 
@@ -113,7 +113,7 @@ struct item {
 };
 ```
 
-Each item has two fields. The *fd* field allows us to track this item is for which request - remember each request is associated with a file descriptor. If we have many producers, then we use the *producer* field to track this item is produced by which producer. In other words, the *producer* field here is like the producer id.
+Each item has two fields. The *fd* field allows us to track this item is corresponding to which http request - remember each request is associated with a file descriptor. If we have many producers, then we use the *producer* field to track this item is produced by which producer. In other words, the *producer* field here is like the producer id.
 
 Everytime the *producer*() is called, it produces an item, encapsulates this item in a node, and add the node into the linked list. The following lines show how you can do so:
 
@@ -134,27 +134,49 @@ addAtRear(list, node);
 ```
 this above line assumes the doubly linked list you created is named as **list**.
 
-In summary, you should have the above 5 lines in your producer() function. And if now you look at the protoypte of the producer() function:
+In summary, you should have the above 5 lines in your *producer*() function. And if now you look at the protoypte of the *producer*() function:
 
 ```c
 void producer(int fd);
 ```
 
-you will see why *fd* is passed as an argument.
+you will see why *fd* is passed as an argument to the *producer*() function.
 
-## APIs Provided by the Doubly Linked List Library
+## Other APIs Provided by the Doubly Linked List Library
 
-You are recommended to use the following functions from the doubly linked list library:
+You are recommended to use the following two functions from the doubly linked list library:
 
 ```c
-void addAtRear(struct list *list, struct node *node);
 struct node *removeFront(struct list *list);
-struct list* createList(int (*equals)(const void *, const void *),
-                        char *(*toString)(const void *),
-                        void (*freeObject)(void *));
-struct node* createNode (void *obj);
 void freeNode(struct node *node, void (*freeObject)(void *));
 ```
+
+You should only use these two functions in your *consumer*() function. The following lines show how you can use them:
+
+```c
+struct node *node;
+struct item *item;
+/* consumer removes nodes from the front */
+node = removeFront(list);
+if(node){
+	item=(struct item *)(node->obj);
+
+	/* now that you have the item, add your code here to consume the item. */
+
+	/* now that the item is removed and consumed, no longer need this node, free the node and free the item. */
+	freeNode(node, freeItem);
+}
+```
+
+once again, this above code assumes the doubly linked list you created is named as **list**.
+
+So what does consume mean? Consumers consume items, and remember we mentioned above, each item is corresponding to an http request. As a web server, eventually what you really want to do is handle these http requests. Each item contains a file descriptor, and each file descriptor is associated with an http request. Now that we have the item, how do we handle the request? Look at the *main*() function in the starter code, you see *request_handle*() is the function we should call to handle http requests. And this function has the following prototype:
+
+```c
+void request_handle(int fd);
+```
+
+Up to this point, you should be able to figure out how you should call *request_handle*() in your *consumer*() function.
 
 ## Pthread APIs
 
@@ -163,12 +185,9 @@ I used the following pthread APIs:
 - pthread_mutex_init()
 - pthread_mutex_lock()
 - pthread_mutex_unlock()
-- pthread_mutex_destroy()
 - pthread_cond_init()
 - pthread_cond_wait()
 - pthread_cond_signal()
-- pthread_cond_broadcast()
-- pthread_cond_destroy()
 
 For each pthread API, read its man page to find out how to use it. 
 
