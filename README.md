@@ -100,6 +100,8 @@ struct list *list;
 list=createList(compareToItem, toStringItem, freeItem); // yes, the name of the three arguments of this createList() must be exactly the same as what are used here, as they are actually three pre-defined functions, defined in *Item.c*.
 ```
 
+After these two lines, you now have a doubly linked list pointed to by *list*. Note that the linked list library itself does not enforce a capacity to the linked list, which means the library itself allows you to add as many nodes as you want to the linked list. Therefore it is your job to check if the size of this linked list now reaches the capacity (which is 5 in this assignment) or not, so that you can avoid adding nodes to the linked list when the size has already reached the capacity.
+
 ## What Exactly Does the Producer Produce?
 
 Everytime the client attempts to send an http request to the server, a special pipe will be established between the client and the server. The request will then be associated with this pipe and its data will be sent over this pipe. To differentiate multiple pipes, the server assign a file descriptor (which is just an integer) to each pipe. Therefore, we can also say each request is associated with a file descriptor.
