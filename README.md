@@ -136,7 +136,7 @@ For each pthread API, read its man page to find out how to use it.
 - server side, run this command to start the server and listen on port 8080.
 
 ```console
-(base) [jidongxiao@onyxnode60 webserver]$ ./server -d ./ -p 8080
+(base) [jidongxiao@onyxnode60 webserver]$ ./server -p 8080
 ```
 
 - client side, run this command to send one http request:
@@ -203,7 +203,7 @@ And we can see that to satisfy these 4 requests, in total it takes about 20 seco
 - server side, run this command to start the web server with 4 threads and all listen on port 8080.
 
 ```console
-(base) [jidongxiao@onyxnode60 webserver]$ ./concurrent_server -d ./ -p 8080 -t 4
+(base) [jidongxiao@onyxnode60 webserver]$ ./concurrent_server -p 8080 -t 4
 ```
 
 - client side, run this command to send one http request:
@@ -265,26 +265,38 @@ sys	0m0.025s
 
 this time we can see the improvements - even for 4 requests, our web server can still serve all of them in about 5 seconds, as opposed to 20 seconds.
 
+3. additional testing. if you want to test the client program with 2 requests, you should run:
+
+```console
+(base) [jidongxiao@onyxnode60 webserver]$ time seq 2 | xargs -n 1 -P 2 -I{} ./client localhost 8080 /spin.cgi?5
+```
+
+if you want to test the client program with 8 requests, you should run:
+
+```console
+(base) [jidongxiao@onyxnode60 webserver]$ time seq 8 | xargs -n 1 -P 8 -I{} ./client localhost 8080 /spin.cgi?5
+```
+
 ## Submission 
 
 23:59pm, October 20th, 2022. Late submissions will not be accepted/graded. 
 
 ## Project Layout
 
-All files necessary for compilation and testing need to be submitted, this includes source code files, header files, the original library, the bash script, and Makefile. The structure of the submission folder should be the same as what was given to you.
+All files necessary for compilation and testing need to be submitted, this includes source code files, header files, linked list library files, and Makefile. The structure of the submission folder should be the same as what was given to you.
 
 ## Grading Rubric (for Undergraduate and Graduate students)
 
 All grading will be executed on onyx.boisestate.edu. Submissions that fail to compile on onyx will not be graded.
                                                                                      
 - [80 pts] Functional Requirements:
-  - [40 pts] testing program produces expected results, when testing with 4 clients, and 4 consumers, linked list capacity is 4, the testing result is approximately 5 seconds.
-  - [40 pts] testing program produces expected results, when testing with 8 clients, and 4 consumers, linked list capacity is 4, the testing result is approximately 10 seconds.
+  - [20 pts] testing program produces expected results: when testing with 2 consumers and 4 client requests, the testing result is approximately 10 seconds.
+  - [20 pts] testing program produces expected results: when testing with 4 consumers and 2 client requests, the testing result is approximately 5 seconds.
+  - [20 pts] testing program produces expected results: when testing with 4 consumers and 4 client requests, the testing result is approximately 5 seconds.
+  - [20 pts] testing program produces expected results: when testing with 4 consumers and 8 client requests, the testing result is approximately 10 seconds.
 - [10 pts] Compiling
   - Each compiler warning will result in a 3 point deduction.
   - You are not allowed to suppress warnings.
 - [10 pts] Documentation:
-  - README.md file: replace this current README.md with a new one using the template. Do not check in this current README.
+  - README.md file (rename this current README file to README.orig and rename the README.template to README.md).
   - You are required to fill in every section of the README template, missing 1 section will result in a 2-point deduction.
-
-Note: Running valgrind is not required anymore for this and future assignments.
