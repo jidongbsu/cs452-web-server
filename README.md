@@ -52,7 +52,7 @@ void producer(int fd);
 void *consumer(void *ptr);
 ```
 
-You also need to modify the *main*() function.
+You also need to modify the *main*() function, so that the *producer*() and *consumer*() will be called. Plus, you are required to extend *main*() so that users (who run the web server) can specify how many consumer threads they want to run. Users do not need to specify how many producer threads they want to run: in this assignment, we only need to support one single producer thread.
 
 To facilitate your implementation of the producer/consumer functions, a doubly linked list library is provided. As shown in the starter code, *./list/lib/libmylib.a* is the provided library. It is pre-compiled, meaning that you can use the library but you have no access to its source code. Coming with the library are two of its header files: List.h and Node.h, both are located in the list/include subfolder. In this assignment, you are asked to create a linked list using API functions provided by this library. When the web server is running, producers add nodes to this linked list, whereas consumers remove nodes from this linked list.
 
