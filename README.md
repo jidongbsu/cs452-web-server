@@ -54,7 +54,7 @@ To facilitate your implementation of the producer/consumer functions, a doubly l
 
 This library does not support multiple threads, thus when a program with multiple threads attempts to access this library - manipulating the doubly linked list, there will be race conditions and the results may not be deterministic, and that is why in this assignment we need to use locks so as to avoid race conditions.
 
-**Constraints**: your linked list should have no more than 5 nodes, in other words, the producer should stop producing (i.e., adding nodes to the linked list) if the number of nodes on the linked list is already 5.
+**Constraints**: your linked list should have no more than 5 nodes, in other words, the producer should stop producing (i.e., adding nodes to the linked list) if the number of nodes on the linked list is already 5 - when the linked list has 5 nodes, we consider the list to be full.
 
 ## Data Structures Defined in the Doubly Linked List Library
 
