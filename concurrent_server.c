@@ -49,7 +49,7 @@ ssize_t readline(int fd, void *buf, size_t maxlen) {
     return n;
 }
 
-/* request handle functions */
+/* when something goes wrong, we call this function to show an error (such as the famous 404 error) to the web client. */
 void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg) {
     char buf[MAXBUF], body[MAXBUF];
     
